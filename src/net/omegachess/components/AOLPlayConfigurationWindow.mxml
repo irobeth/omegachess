@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Window xmlns:mx="http://www.adobe.com/2006/mxml" showStatusBar="false" layout="absolute" width="640" height="480" backgroundColor="#EEEEEE" resizable="false" verticalScrollPolicy="off" horizontalScrollPolicy="off" creationComplete="window1_creationCompleteHandler(event)">
+	<mx:Script>
+		<![CDATA[
+			import com.aol.api.wim.Session;
+			import com.aol.api.wim.data.types.SessionState;
+			import com.aol.api.wim.events.BuddyListEvent;
+			import com.aol.api.wim.events.IMEvent;
+			import com.aol.api.wim.events.SessionEvent;
+			import com.aol.api.wim.events.UserEvent;
+			
+			import mx.events.FlexEvent;
+			
+			import net.omegachess.controllers.movement.AOLMovementController;
+			
+			[Bindable]
+			private var players : Array = ["White", "Black", "Random"];
+			public var controller : AOLMovementController;
+			public var session : Session;
+			public function init() : void {
+				//oh god aol?				
+				session = new Session(this.stage, "ta1jAMrHivDleLyg", "Test Client 1", "1.1");
+				
+				session.signOn(this.userName.text, this.passwordField.text);
+				session.addEventListener(SessionEvent.STATE_CHANGED,sessionHandler);
+				session.addEventListener(UserEvent.MY_INFO_UPDATED,userHandler);
+				session.addEventListener(BuddyListEvent.LIST_RECEIVED,buddyHandler);
+				//session.addEventListener(IMEvent.IM_SEND_RESULT,IMSendHandler);
+				session.addEventListener(IMEvent.IM_RECEIVED,IMRecieveHandler);
+				//session.addEventListener(UserEvent.BUDDY_PRESENCE_UPDATED,buddyUpdateHandler);
+				var self = this;
+			}
+			//session updates
+			private function sessionHandler(ev:SessionEvent):void{
+				//trace("session update = " + ev.session.sessionState);
+				Debug.show(Debug.INFO, "STATUS IM", ev.session.sessionState);
+				this.addHistory("[SYSTEM]", "#00CC00", ev.session.sessionState);
+				if(ev.session.sessionState === SessionState.ONLINE) {
+					this.dispatchEvent(ev);
+				}
+			}
+			
+			private function ring() : void {
+				Debug.show(Debug.DUMP, "RING", this.buddyList.selectedItem);
+				controller.challenge(this.buddyList.selectedItem.@aimId);
+			}
+			
+			//user information updates
+			private function userHandler(ev:UserEvent):void{
+				//trace("user update = " + ev.user.label);
+			}
+			
+			//buddy list updates - builds XMLListCollection for Tree component
+			private function buddyHandler(ev:BuddyListEvent):void{		
+				
+				var buddyGroup:Object;
+				var buddyXML:XML = <xml></xml>;
+				for(var p:String in ev.buddyList.groups){
+					buddyGroup = ev.buddyList.groups[p];
+					if(buddyGroup.users.length > 0) {
+						var groupStr:String = "<group label='" + ev.buddyList.groups[p].label + "'></group>";
+						var groupXML:XML = new XML(groupStr);
+						for(var m:String in buddyGroup.users){
+							if(buddyGroup.users[m].state == "online") {
+								var xmlNode : XML = new XML("<user aimId='"+buddyGroup.users[m].aimId +"' label='" + buddyGroup.users[m].label + "' state='" + buddyGroup.users[m].state + "' ></user>");								
+								var xmlStr:String = buddyGroup.users[m].label;//;
+								
+
+								groupXML.appendChild(xmlNode);
+							}						
+						}
+						buddyXML.appendChild(groupXML);
+					}
+				}
+				
+				var buddeXMLList:XMLList = buddyXML.group;
+				buddyList.dataProvider = buddeXMLList;
+			}
+			
+			//recieved message
+			private function IMRecieveHandler(ev:IMEvent):void{				
+				this.addHistory(ev.im.sender.label, "#0000CC", ev.im.message);
+			}
+			
+			protected function textinput1_enterHandler(event:FlexEvent):void
+			{
+				if(this.buddyList.selectedItem !== null) {
+					// TODO Auto-generated method stub
+					var toBuddy : String = this.buddyList.selectedItem.@aimId;
+					//trace(toBuddy);
+					session.sendIM(toBuddy, this.messageText.text);
+	
+					this.addHistory(session.myInfo.label, "#CC0000", this.messageText.text);
+				}
+				
+				this.messageText.text = "";
+			}
+			
+			private function addHistory(w:String, c:String, s:String) : void {
+				var content = 
+					'<div>' + 
+					'<span style="color: '+c+'; font-weight: bold;">'+w+'</span><hr />' +
+					'<div><span style="color: #000000; font-family: Lucida Console">' + s + '</span></div>' +
+					'</div><br />';
+				
+				this.history.htmlLoader.window.appendContent( content );									
+			}
+			
+			protected function window1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.history.htmlText = 
+					'<style> html,body { padding-left: 5px; } div { font-size: 12px !important; }</style><body>' + 
+						'<script language="Javascript">' +  
+							'function appendContent( value )' + 
+							'{  ' +
+								'var 	c = document.getElementById("content");' +
+										'c.innerHTML += value;' +
+										'document.getElementById("content").scrollTop = 90000;' +  
+							'}  ' +
+						'</script>' + 
+						'<div id="content" name="content" />' + 
+					'</body>';
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Canvas left="0" right="0" top="0" bottom="0" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		
+		
+		<mx:Text x="11" y="8" text="Username:" />
+		<mx:TextInput id="userName" y="34" left="10" width="300" tabIndex="0"/>
+		
+		<mx:Text x="11" y="67" text="Password:"/>
+		<mx:TextInput id="passwordField" x="10" y="93" width="300" displayAsPassword="true" tabIndex="1"/>
+		
+		
+				
+		<mx:Button x="10" y="126" width="300" label="Log In" click="init()"/>
+		
+		<mx:Text x="14" y="369" text="Play as:"/>
+		<mx:ComboBox id="playAs" x="10" y="395" width="300" dataProvider="{this.players}" editable="false" />
+		
+		<mx:Text x="10" y="154" text="Buddies:"/>
+		<mx:Tree x="10" y="180" width="305" height="180" id="buddyList" showRoot="false" labelField="@label" />		
+		
+		<mx:Button x="10" y="446" width="300" label="Ring Player" click="ring()" enabled="{this.buddyList.selectedItem.@state == 'online'}" />
+		
+		<mx:VRule height="100%" horizontalCenter="0" />
+		
+		<mx:HTML id="history" x="328" y="10" width="300" height="429" borderStyle="inset"/>
+		<mx:TextInput x="328" y="447" width="300" enter="textinput1_enterHandler(event)" id="messageText" />
+		
+		
+	</mx:Canvas>
+</mx:Window>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menubar>
+	<menu label="Game">
+		<menuitem label="New" command="new" />				
+	</menu>	
+	<menu label="About">
+		<menuitem label="AIROmega" command="" enabled="false" />				
+		<menuitem label="Designed by Brady Cash" command="NIGHTMARE MODE" />
+	</menu>
+</menubar>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:components="net.omegachess.components.*"
+	layout="horizontal" 
+	width="576" height="612"
+	showStatusBar="true"
+	creationPolicy="all"
+	creationComplete="init()"
+	paddingBottom="0"
+	paddingLeft="0"
+	paddingRight="0"
+	paddingTop="0" 
+	horizontalGap="0"
+	frameRate="120"
+	menu="{nativeApplicationMenu}"
+	horizontalScrollPolicy="off"
+	verticalScrollPolicy="off"
+	modalTransparency=".9"
+	modalTransparencyColor="#000000"
+	status=""
+	horizontalAlign="left"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexNativeMenuEvent;
+			
+			import net.omegachess.classes.Bitboard;
+			import net.omegachess.classes.Board;
+			import net.omegachess.components.AOLPlayConfigurationWindow;
+			import net.omegachess.components.Cell;
+			import net.omegachess.controllers.GameController;
+			import net.omegachess.controllers.movement.AOLMovementController;
+			import net.omegachess.controllers.movement.HumanMovementController;
+			import net.omegachess.intents.Intent;
+			import net.omegachess.intents.IntentRegistry;
+			import net.omegachess.models.GameModel;
+			import net.omegachess.moves.movetypes.Move;
+			import net.omegachess.populators.DefaultBoardPopulator;
+			import net.omegachess.tasks.Task;
+			
+			[Bindable]
+			internal var controller : GameController;
+						
+			public function init() : void {				
+				IntentRegistry.registerIntentHandler(Intent.INTENT_TYPE_START_TASK, startTaskIntentHandler, false, 1);
+				IntentRegistry.registerIntentHandler(Intent.INTENT_TYPE_MOVE_DECIDED, moveDecidedHandler, false, 1);
+			}
+			
+			protected function nativeApplicationMenu_itemClickHandler(event:FlexNativeMenuEvent) : void {				
+				var command : String 					= 	event.item.@command;
+				var label	: String					=	event.item.@label;
+				
+				if(command == null || command == "") {
+					command = label;	
+				}
+				
+				if(command == "AOL") {
+					IntentRegistry.purge(0);
+					
+					var board : Board = new Board();
+					
+					var populator : DefaultBoardPopulator = new DefaultBoardPopulator();
+						populator.populate(board);
+					
+					var aol : AOLMovementController = new AOLMovementController()
+						controller = new GameController(aol, aol);
+										
+					controller.model = new GameModel(board);
+					
+					controller.init(); //away we go						
+				} else if(command == "PVP") {														
+					IntentRegistry.purge(0);
+										
+					controller = new GameController(
+						new HumanMovementController(),
+						new HumanMovementController()
+					);
+					
+					var board : Board = new Board();
+					var populator : DefaultBoardPopulator = new DefaultBoardPopulator();
+						populator.populate(board);
+						
+					controller.model = new GameModel(board);
+					
+					controller.init(); //away we go
+				} else if(command == "PVC") {
+					/*var aiGC : PVAGameController = new PVAGameController();
+					aiGC.screenDisplay = this;				
+					aiGC.boardDisplayComponent = boardDisplay;
+					aiGC.init();*/
+				}
+			}
+			
+			private function startTaskIntentHandler( i : Intent ) : void {
+				var task : Task = i.data as Task;
+					task.start(this);
+			}
+			
+			private function moveDecidedHandler( i : Intent ) : void {
+				status = (i.data as Move).toACN();
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:XML source="./OmegaMenu.xml" id="omegaMenu" format="e4x" />		
+	<components:BoardDisplay id="boardDisplay" />
+	<!--<mx:List width="100%" height="100%" borderSides="left" borderStyle="solid" borderColor="#000000"/>-->
+	<mx:FlexNativeMenu id="nativeApplicationMenu" dataProvider="{omegaMenu}" labelField="@label" showRoot="false" itemClick="nativeApplicationMenu_itemClickHandler(event)" />
+</mx:WindowedApplication>

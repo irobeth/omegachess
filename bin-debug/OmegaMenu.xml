@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menubar>
+	<menu label="Game">
+		<menuitem label="New">
+			<menuitem label="vs Player">
+				<menuitem label="Local" command="PVP" />
+				<menuitem label="via AOL Instant Messenger" command="AOL" />				
+			</menuitem>
+			<menuitem label="vs AI" command="PVC" enabled="false" />
+		</menuitem>				
+	</menu>	
+	<menu label="About">
+		<menuitem label="Omega Chess" command="" enabled="false" />				
+		<menuitem label="Developed by Brady Cash" command="" enabled="false" />
+		<menuitem label="Designed by Daniel MacDonald" command="" enabled="false" />
+	</menu>
+</menubar>

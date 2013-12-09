@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="576" height="576"
+	creationComplete="init()"
+>
+	<mx:Script>
+		<![CDATA[
+			import net.omegachess.classes.Board;
+			import net.omegachess.classes.pieces.Hole;
+			import net.omegachess.events.CellSelectedEvent;
+			import net.omegachess.intents.Intent;
+			import net.omegachess.intents.IntentRegistry;
+			import net.omegachess.moves.movetypes.Move;
+			private var cells : Array = new Array();
+						
+			public function init() {
+				//draw a bunch of empty cells.
+				for(var r : Number = 0; r < 12; r++) {
+					for(var f : Number = 0; f < 12; f++) {
+						var c : Cell = new Cell();
+							c.canFireIntents = true;
+							c.rank = r;
+							c.file = f;							
+							c.piece = new Hole();
+							//c.addEventListener(CellSelectedEvent.CELL_SELECTED, cellSelectedHandler);
+
+						addChild(c);
+						cells.push(c);
+						
+						c.draw();
+					}
+				}
+				
+				IntentRegistry.registerIntentHandler(Intent.INTENT_TYPE_BOARD_CHANGED, boardChangedIntentHandler, false, 1);
+				IntentRegistry.registerIntentHandler(Intent.INTENT_TYPE_DRAW_MOVES, drawMovesIntentHandler, false, 1); 
+			}
+			
+			private function boardChangedIntentHandler( i : Intent ) : void {
+				var b : Board = i.data as Board;
+				dataProvider = b;
+			}
+			
+			public function set dataProvider( board : Board ) : void {
+				//update my own cells with the board's pieces. we shouldn't care at all about rank or file;
+				for(var r : Number = 0; r < 12; r++) {
+					for(var f : Number = 0; f < 12; f++) {
+						var myCell : Cell = cells[r*12+f] as Cell;
+							myCell.piece = board.getCellAt(r, f).piece;
+							
+							myCell.draw();
+					}
+				}
+			}
+			
+			public function draw( ) : void {
+				//update my own cells with the board's pieces. we shouldn't care at all about rank or file;
+				for(var r : Number = 11; r >= 0; r--) {
+					for(var f : Number = 11; f >= 0; f--) {
+						var myCell : Cell = cells[r*12+f] as Cell;
+						myCell.draw();
+					}
+				}
+			}
+			
+			public function drawCells( draw : Array ) : void {
+				//update my own cells with the board's pieces. we shouldn't care at all about rank or file;
+				for each(var cell : Cell in draw) {
+					var myCell : Cell = cells[cell.rank*12+cell.file] as Cell;
+						myCell.draw();
+				}
+			}
+			
+			public function drawCell( draw : Cell ) : void {
+				//update my own cells with the board's pieces. we shouldn't care at all about rank or file;
+				var myCell : Cell = cells[draw.rank*12+draw.file] as Cell;
+				myCell.draw();
+			}
+			
+			public function highlightCells( draw : Array ) : void {
+				for(var i = draw.length - 1; i >= 0; i --) {
+					this.highlightCell(draw[i] as Cell, Constants.CELL_COLOR_HIGHLIGHT);
+				}
+			}
+
+			public function highlightCell( draw : Cell, color : String ) : void {
+				//update my own cells with the board's pieces. we shouldn't care at all about rank or file;
+				var myCell : Cell = cells[draw.rank*12+draw.file] as Cell;
+				myCell.draw(color);
+			}
+						
+			private function drawMovesIntentHandler( i : Intent ) : void {
+				var moves : Array = i.data as Array;
+				
+				for(var k = moves.length - 1; k >=0; k --) {
+					var move = moves[k];
+					
+					if(!(move.destination.piece is Hole) && move.destination.piece.alignment !== move.source.piece.alignment) {
+						highlightCell(move.destination, Constants.CELL_COLOR_THREAT);
+					} else {
+						highlightCell(move.destination, Constants.CELL_COLOR_HIGHLIGHT);						
+					}
+				}
+				
+			}
+		]]>
+	</mx:Script>
+</mx:Canvas>
